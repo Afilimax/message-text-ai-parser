@@ -104,6 +104,7 @@ npm run build      # compila para dist/
 ## Licença
 
 MIT
+
 ---
 
 ## Automatize sua operação de afiliados
