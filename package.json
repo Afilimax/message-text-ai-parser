@@ -6,7 +6,7 @@
     "type": "git",
     "url": "https://github.com/Afilimax/message-text-ai-parser.git"
   },
-  "homepage": "https://github.com/Afilimax/message-text-ai-parser#readme",
+  "homepage": "https://afilimax.net",
   "bugs": {
     "url": "https://github.com/Afilimax/message-text-ai-parser/issues"
   },
@@ -30,7 +30,8 @@
     "access": "public"
   },
   "keywords": [
-    "marcuth"
+    "marcuth",
+    "afilimax"
   ],
   "author": "Marcuth",
   "license": "MIT",

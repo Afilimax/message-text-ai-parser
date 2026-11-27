@@ -1,3 +1,10 @@
+<a href="https://afilimax.net"><img src="https://raw.githubusercontent.com/Afilimax/.github/main/assets/npm-banner.svg" alt="Afilimax — Encontre a oferta. Gere o link. Divulgue sozinho." width="100%" /></a>
+
+[![npm version](https://img.shields.io/npm/v/%40afilimax%2Fmessage-text-ai-parser?logo=npm)](https://www.npmjs.com/package/@afilimax/message-text-ai-parser)
+[![npm downloads](https://img.shields.io/npm/dm/%40afilimax%2Fmessage-text-ai-parser?logo=npm)](https://www.npmjs.com/package/@afilimax/message-text-ai-parser)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Afilimax/message-text-ai-parser/blob/HEAD/LICENSE)
+[![Website](https://img.shields.io/badge/website-afilimax.net-7857FF)](https://afilimax.net)
+
 # @afilimax/message-text-ai-parser
 
 Biblioteca que usa IA ([AI SDK da Vercel](https://ai-sdk.dev)) para extrair dados de mensagens de ofertas enviadas por canais de promoções brasileiros. Diferente do [`@afilimax/message-text-parser`](../message-text-parser), que depende de parsers escritos para cada canal, aqui um modelo de linguagem interpreta mensagens de qualquer formato.
@@ -97,3 +104,11 @@ npm run build      # compila para dist/
 ## Licença
 
 MIT
+
+---
+
+## Automatize sua operação de afiliados
+
+> Use este pacote para automatizar sua operação de afiliados. Conheça a plataforma Afilimax e transforme ofertas em links e divulgação automática.
+
+[Conheça a Afilimax](https://afilimax.net) · [Pacote no npm](https://www.npmjs.com/package/@afilimax/message-text-ai-parser) · [Repositório no GitHub](https://github.com/Afilimax/message-text-ai-parser)
