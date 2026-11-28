@@ -7,9 +7,18 @@
 
 # @afilimax/message-text-ai-parser
 
-Biblioteca que usa IA ([AI SDK da Vercel](https://ai-sdk.dev)) para extrair dados de mensagens de ofertas enviadas por canais de promoções brasileiros. Diferente do [`@afilimax/message-text-parser`](../message-text-parser), que depende de parsers escritos para cada canal, aqui um modelo de linguagem interpreta mensagens de qualquer formato.
+Biblioteca TypeScript que usa o AI SDK para extrair produtos, preços, URLs e cupons de mensagens de ofertas. Um modelo de linguagem interpreta diferentes formatos de mensagem, sem exigir um parser específico para cada canal.
 
-Mensagens que não divulgam um produto (por exemplo, que apenas anunciam cupons) são ignoradas e retornam `null`.
+## Recursos
+
+- Extração de ofertas por modelo de linguagem com saída estruturada.
+- Compatibilidade com os modelos suportados pelo AI SDK.
+- Prompt de sistema dedicado a mensagens de promoções brasileiras.
+- Identificação de mensagens sem produto, como avisos e listas de cupons.
+- Extração de título, preço atual, preço anterior, URL e cupons.
+- Validação da saída com Zod e URLs verificadas antes do retorno.
+- Temperatura fixa em `0` para reduzir variações na extração.
+- Prompt de sistema personalizável.
 
 ## Instalação
 
@@ -17,13 +26,17 @@ Mensagens que não divulgam um produto (por exemplo, que apenas anunciam cupons)
 npm install @afilimax/message-text-ai-parser
 ```
 
-Você também precisa de um provedor de modelo do AI SDK, como `@ai-sdk/openai`, `@ai-sdk/google` ou `@ai-sdk/anthropic`:
+Instale separadamente o provider do AI SDK correspondente ao modelo escolhido. Por exemplo, para usar a OpenAI:
 
 ```bash
 npm install @ai-sdk/openai
 ```
 
-## Uso
+O provider do modelo não é instalado automaticamente por este pacote.
+
+## Como usar
+
+Crie o parser com um `LanguageModel` do AI SDK e envie o texto da mensagem:
 
 ```typescript
 import { openai } from "@ai-sdk/openai"
@@ -33,77 +46,111 @@ const parser = new MessageTextAiParser({
     model: openai("gpt-4.1-mini"),
 })
 
-const offer = await parser.parse(`Tênis Charged Starlight Se Under Armour
+const offer = await parser.parse(`Wireless Gaming Mouse
 
-💲R$ 158,99
-💳 Em 6x Sem Juros
-🎟 Cupom: CARNAVAL40
+Price: R$ 158,99
+Coupon: SAVE40
 
-🔗https://mercadolivre.com/sec/2yaVLgw`) // Offer | null
+https://mercadolivre.com/sec/2yaVLgw`)
 
-console.log(offer) /* {
-  title: 'Tênis Charged Starlight Se Under Armour',
-  price: { value: 158.99, oldValue: null, currency: 'BRL' },
-  url: 'https://mercadolivre.com/sec/2yaVLgw',
-  coupons: [ 'CARNAVAL40' ]
-} */
+if (offer) {
+    console.log("Product:", offer.title)
+    console.log("Price:", offer.price.value, offer.price.currency)
+    console.log("URL:", offer.url)
+    console.log("Coupons:", offer.coupons)
+} else {
+    console.log("No product offer found")
+}
 ```
 
-### Mensagens sem produto
+A chamada usa as credenciais configuradas no provider do AI SDK. Consulte a documentação do provider escolhido para definir as variáveis de ambiente necessárias.
+
+### Ignorar mensagens sem produto
 
 ```typescript
-await parser.parse("🔥 NOVOS CUPONS MERCADO LIVRE 🔥") // null
-await parser.parse("R$ 50 OFF em compras acima de R$ 200") // null
+const couponNotice = await parser.parse("New discount coupons available")
+const generalNotice = await parser.parse("Channel updates and announcements")
+
+console.log("Coupon notice:", couponNotice)
+console.log("General notice:", generalNotice)
 ```
 
-## Opções
+Esses conteúdos retornam `null`, assim como supostas ofertas sem título, preço ou URL válida.
 
-| Opção          | Tipo            | Descrição                                                        |
-| -------------- | --------------- | ---------------------------------------------------------------- |
-| `model`        | `LanguageModel` | Modelo do AI SDK usado na extração (obrigatório).                |
-| `systemPrompt` | `string`        | Substitui o prompt de sistema padrão (opcional).                 |
+### Personalizar o prompt
 
-O prompt padrão está exportado como `SYSTEM_PROMPT`, útil como base para customizações:
+Use `SYSTEM_PROMPT` como base e acrescente as regras desejadas:
 
 ```typescript
 import { SYSTEM_PROMPT } from "@afilimax/message-text-ai-parser"
 
 const parser = new MessageTextAiParser({
-    model,
-    systemPrompt: `${SYSTEM_PROMPT}\n\nIgnore ofertas de lojas fora do Brasil.`,
+    model: openai("gpt-4.1-mini"),
+    systemPrompt: `${SYSTEM_PROMPT}\n\nIgnore offers from stores outside Brazil.`,
 })
 ```
 
-## Retorno
+Quando `systemPrompt` é informado, ele substitui o prompt padrão; por isso, inclua `SYSTEM_PROMPT` se quiser preservar as regras originais.
 
-`parse(text)` retorna `Promise<Offer | null>`:
+## Configuração
 
-```typescript
-interface Offer {
-    title: string
-    price: { value: number; oldValue: number | null; currency: "BRL" }
-    url: string
-    coupons: string[] | null
-}
-```
+A interface `MessageTextAiParserOptions` aceita:
 
-Observações:
+| Opção | Tipo | Obrigatória | Descrição |
+| :--- | :--- | :--- | :--- |
+| `model` | `LanguageModel` | Sim | Modelo do AI SDK usado na extração. |
+| `systemPrompt` | `string` | Não | Prompt que substitui `SYSTEM_PROMPT`. |
 
-- `price.value` e `price.oldValue` são em **reais** (ex.: `158.99`), não em centavos.
-- Retorna `null` quando a mensagem não é um produto ou quando faltam título, preço ou uma URL válida.
-- A extração roda com `temperature: 0` e saída estruturada validada com [zod](https://zod.dev) (`aiOfferSchema`, também exportado).
+O pacote usa `generateText` com `Output.object`, o schema `aiOfferSchema` e `temperature: 0`.
+
+## Referência da API
+
+### `new MessageTextAiParser(options)`
+
+Cria um parser com o modelo e o prompt configurados.
+
+### `parse(text: string): Promise<Offer | null>`
+
+Envia o texto ao modelo e converte a saída estruturada para `Offer`. Retorna `null` quando a mensagem não representa um produto ou quando faltam dados essenciais.
+
+| Campo de `Offer` | Tipo | Descrição |
+| :--- | :--- | :--- |
+| `title` | `string` | Nome do produto. |
+| `price.value` | `number` | Preço atual em reais, como `158.99`. |
+| `price.oldValue` | `number \| null` | Preço anterior em reais, quando identificado. |
+| `price.currency` | `"BRL"` | Moeda da oferta. |
+| `url` | `string` | URL válida encontrada na mensagem. |
+| `coupons` | `string[] \| null` | Cupons encontrados ou `null`. |
+
+### Outras exportações
+
+| Exportação | Finalidade |
+| :--- | :--- |
+| `SYSTEM_PROMPT` | Prompt padrão usado na extração. |
+| `aiOfferSchema` | Schema Zod da saída intermediária do modelo. |
+| `Offer` | Tipo TypeScript do retorno de `parse`. |
+| `AiOffer` | Tipo TypeScript inferido de `aiOfferSchema`. |
+| `MessageTextAiParserOptions` | Tipo TypeScript das opções do construtor. |
 
 ## Desenvolvimento
 
-```bash
-npm run test       # testes (Vitest, com modelo mock)
-npm run lint:fix   # ESLint
-npm run build      # compila para dist/
-```
+Instale as dependências com `npm install`. Os scripts disponíveis são:
+
+| Comando | Finalidade |
+| :--- | :--- |
+| `npm run dev` | Executa `src/index.ts` com `tsx`. |
+| `npm run build` | Compila o TypeScript para `dist/`. |
+| `npm test` | Executa o Vitest. |
+| `npm run test:cov` | Executa os testes uma vez com cobertura. |
+| `npm run lint` | Verifica o código com ESLint. |
+| `npm run lint:fix` | Executa o ESLint com correção automática. |
+| `npm run format` | Formata os arquivos de `src/` com Prettier. |
+
+Os testes usam um modelo simulado e não exigem credenciais de IA nem chamadas externas.
 
 ## Licença
 
-MIT
+Distribuído sob a licença [MIT](./LICENSE).
 
 ---
 
